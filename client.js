@@ -1,22 +1,39 @@
 const http = require('http');
 
-// Use the port provided by the environment, or a default of 3000.
-// Railway will set the PORT environment variable.
-const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0';
+// Configuration for the server
+// Use 'localhost' and the correct port for local testing
+const options = {
+  hostname: 'localhost',
+  port: 50010,
+  path: '/',
+  method: 'GET'
+};
 
-// Create the HTTP server
-const server = http.createServer((req, res) => {
-  console.log(`[SERVER] Request received from ${req.socket.remoteAddress}:${req.socket.remotePort}`);
+// Create a new HTTP request
+const req = http.request(options, (res) => {
+  console.log(`[CLIENT] Connected to server.`);
+  console.log(`[CLIENT] Status Code: ${res.statusCode}`);
+  console.log(`[CLIENT] Headers: ${JSON.stringify(res.headers)}`);
 
-  // Set the response HTTP header with a status and content type
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  
-  // Write the response body
-  res.end('Hello, World!');
+  // Variable to store the incoming data
+  let data = '';
+
+  // A chunk of data has been received.
+  res.on('data', (chunk) => {
+    data += chunk;
+  });
+
+  // The whole response has been received.
+  res.on('end', () => {
+    console.log('[CLIENT] Response from server:');
+    console.log(data);
+  });
 });
 
-// Start the server and listen on the specified port and host
-server.listen(PORT, HOST, () => {
-  console.log(`[SERVER] Listening for HTTP requests on ${HOST}:${PORT}`);
+// Event handler for request errors
+req.on('error', (e) => {
+  console.error(`[CLIENT] Problem with request: ${e.message}`);
 });
+
+// End the request
+req.end();

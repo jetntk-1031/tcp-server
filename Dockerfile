@@ -11,7 +11,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install application dependencies
-RUN npm install
+RUN npm install --omit=dev
 
 # Copy the server source code into the container
 COPY . .

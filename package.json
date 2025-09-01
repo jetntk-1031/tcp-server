@@ -1,7 +1,7 @@
 {
-"name": "tcp-server",
+"name": "http-server",
 "version": "1.0.0",
-"description": "A simple Node.js TCP server",
+"description": "A simple Node.js HTTP server",
 "main": "server.js",
 "scripts": {
 "start": "node server.js"
