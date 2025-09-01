@@ -1,5 +1,5 @@
 const net = require('net'); // Node.js's built-in networking module
-const port = process.env.PORT || 8080; // Get port from environment variable, or use 8080 as a fallback
+const port = 50010; // Get port from environment variable, or use 8080 as a fallback
 
 // Create a new TCP server instance.
 // The callback function is executed when a new client connects.
