@@ -2,7 +2,7 @@ const net = require('net');
 
 // Use the port provided by the environment, or a default of 3000.
 // Railway will set the PORT environment variable.
-const PORT = process.env.PORT || 3000;
+const PORT = 50010;
 const HOST = '0.0.0.0';
 
 // Create the TCP server
