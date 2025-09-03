@@ -39,10 +39,10 @@ let DDR_ES56_Obj = await parseStringPromise(DDR_ES56_BodyRes);
 let chgOver_Subject = 0;
 
 const MagProdRcp = {
-    0:["Prod100","Mag1"],
-    1:["Prod175","Mag1"],
-    2:["Prod200","Mag1"],
+    0:["100","csp-240403-01_S2"],
+    1:["175","csp-240403-01_S2"]
 }
+//    2:["200","Mag1"],
 function extractXml(data) {
   let xml;
 
