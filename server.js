@@ -352,6 +352,11 @@ let plcChangeOverStarted = async (root) => {
 
     //correct instance
     format_returncode(root.event,0,null)
+
+    if(!root.hasOwnProperty("body")){
+        root["body"] = [null];
+    }
+
     format_body(root.body)
 }
 let checkTTNR = (eventAttribute) => {return true;}
