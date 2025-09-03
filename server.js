@@ -43,7 +43,33 @@ const MagProdRcp = {
     1:["Prod175","Mag1"],
     2:["Prod200","Mag1"],
 }
+function extractXml(data) {
+  let xml;
 
+  // If it's a Buffer (from TCP socket)
+  if (Buffer.isBuffer(data)) {
+    // If first byte looks like '<' -> no length prefix
+    if (data[0] === 0x3C) { // '<'
+      xml = data.toString("utf8");
+    } else {
+      // Assume 4-byte length prefix
+      let len = data.readUInt32BE(0);
+      xml = data.slice(4, 4 + len).toString("utf8");
+    }
+  } 
+  // If it's a string
+  else if (typeof data === "string") {
+    data = data.trimStart();
+    if (data.startsWith("<")) {
+      xml = data; // already pure XML
+    } else {
+      // Assume first 4 chars are hex length
+      xml = data.slice(4).trimStart();
+    }
+  }
+
+  return xml;
+}
 
 
 const server = net.createServer((socket) => {
@@ -51,7 +77,7 @@ const server = net.createServer((socket) => {
 
   socket.on("data", async (data) => {
     // console.log(`data : ${data}`)
-    const xmlInput = data.toString().trim();
+    const xmlInput = extractXml(data).toString().trim();
     try {
         const request = await parseStringPromise(xmlInput);
         await CheckEvent(request);
