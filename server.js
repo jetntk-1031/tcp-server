@@ -347,8 +347,7 @@ let plcChangeOverStarted = async (root) => {
         return;
     };
     //parsed the changeover typeNo 1st 
-    let checklen = MagProdRcp.length;
-    chgOver_Subject = stringToRangedNumber(root.event[0].plcChangeOverStarted[0].$.typeNo,0,Object.keys(MagProdRcp).length);
+    chgOver_Subject = stringToRangedNumber(root.event[0].plcChangeOverStarted[0].$.typeNo,0,Object.keys(MagProdRcp).length-1);
 
     //correct instance
     format_returncode(root.event,0,null)
