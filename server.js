@@ -10,6 +10,41 @@ const builder = new Builder({
   renderOpts: { pretty: true } // format nicely
 });
 
+///// retaining the structure object
+let DDR_ES56_BodyRes = `
+                <body>
+                    <structArrays>
+                        <array name="orderList">
+                            <structDef>
+                                <item name="orderNo" dataType="8" />
+                                <item name="quantity" dataType="3" />
+                                <item name="typeNo" dataType="8" />
+                                <item name="typeVar" dataType="8" />
+                                <item name="priority" dataType="3" />
+                                <item name="workingCode" dataType="2" />
+                                <item name="orderState" dataType="3" />
+                                <item name="counter" dataType="3" />
+                                <item name="batch" dataType="8" />
+                            </structDef>
+                            <values>
+                            </values>
+                        </array>
+                    </structArrays>
+                    <structs />
+                </body>
+    `;
+                          
+let DDR_ES56_Obj = await parseStringPromise(DDR_ES56_BodyRes);
+
+let chgOver_Subject = 0;
+
+const MagProdRcp = {
+    0:["Prod100","Mag1"],
+    1:["Prod175","Mag1"],
+    2:["Prod200","Mag1"],
+}
+
+
 
 const server = net.createServer((socket) => {
   console.log(`Client connected: ${socket.remoteAddress}:${socket.remotePort}`);
@@ -127,19 +162,16 @@ let partReceived_ES1 = async (root) => {
     };
     
     //correct instance
-    format_returncode(root.event,0,null)
-    await PR_ES1_Body().then(Res => {
-        format_body(root.body,Res)
+    
+    let Res = await PR_ES1_Body(root.event[0]);
 
-    }).catch(error => {
-        console.error("Failed to parse:", error.message);
-    });
+    format_returncode(root.event,0,null)
+    format_body(root.body,Res);
     
 }
 let checkPR_ES1 = (eventAttribute) => {return true;};
-
-let PR_ES1_Body = async (ProgNm, MagType) => {
-    let template = `
+let PR_ES1_Body = async (event) => {
+    let PR_ES1_BodyRes = `
                     <body>
                         <items>
                             <item name="LocationState" value="0" dataType="3" />
@@ -151,17 +183,58 @@ let PR_ES1_Body = async (ProgNm, MagType) => {
                         </structs>
                     </body>
                     `;
-    const xmlInput = template.toString().trim();
+   //To Link
+    let ES56Obj_item = DDR_ES56_Obj.body.structArrays[0].array[0].values[0];
+    //pointer
+    let PR_ES1_Obj = await parseStringPromise(PR_ES1_BodyRes);
+    
+    PR_ES1_Obj.body.structs[0] = {'workPart' : []}
+   
+    //find relevant part
+    let WO_item = ES56Obj_item.item.find(item => item.$.typeNo == event.partReceived[0].$.typeNo);
 
-    try {
-        const request = await parseStringPromise(xmlInput);
-        return request;
-    } catch (err) {
-        console.error("❌ Error parsing XML:", err.message);
-        // You can throw the error or return a specific value, depending on your error-handling strategy
-        throw err;
+    PR_ES1_Obj.body.structs[0].workPart[0] = {
+        "$":{
+            "changeOver" : "false",
+            "partForStation": "true",
+            "typeNo":WO_item.$.typeNo,
+            "typeVar":WO_item.$.typeVar,
+            "workingCode":"0",
+            "identifier": event.partReceived[0].$.identifier,
+            "batch":WO_item.$.batch,
+            "passThrough": "false",
+            "nextProcessNo": "0",
+            "partState": WO_item.$.orderState
+        }
     }
-};
+
+
+  return PR_ES1_Obj;
+}
+// let PR_ES1_Body = async (ProgNm, MagType) => {
+//     let template = `
+//                     <body>
+//                         <items>
+//                             <item name="LocationState" value="0" dataType="3" />
+//                             <item name="ProcessState" value="0" dataType="3" />
+//                             <item name="ToolState" value="0" dataType="3" />
+//                         </items>
+//                         <structs>
+//                             <workPart changeOver="false" partForStation="false" typeNo="1111111111" typeVar="0001" workingCode="0" identifier="MLL_Panel01" batch="12345" passThrough="false" nextProcessNo="25" partState="5" />
+//                         </structs>
+//                     </body>
+//                     `;
+//     const xmlInput = template.toString().trim();
+
+//     try {
+//         const request = await parseStringPromise(xmlInput);
+//         return request;
+//     } catch (err) {
+//         console.error("❌ Error parsing XML:", err.message);
+//         // You can throw the error or return a specific value, depending on your error-handling strategy
+//         throw err;
+//     }
+// };
 
 let partReceived_ES10 = async (root) => {
     if (! checkPR_ES10(root.event[0].partReceived[0].$)){
@@ -247,12 +320,36 @@ let plcChangeOverStarted = async (root) => {
         format_returncode(root.event,0,"Change Over Started Failed")
         return;
     };
-    
+    //parsed the changeover typeNo 1st 
+    let checklen = MagProdRcp.length;
+    chgOver_Subject = stringToRangedNumber(root.event[0].plcChangeOverStarted[0].$.typeNo,0,Object.keys(MagProdRcp).length);
+
     //correct instance
     format_returncode(root.event,0,null)
     format_body(root.body)
 }
 let checkTTNR = (eventAttribute) => {return true;}
+function stringToRangedNumber(str, min, max) {
+  // 1. Convert the string to a non-negative integer using a simple hash.
+  //    This part is deterministic: the same string always produces the same hash.
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Ensure 32-bit integer
+  }
+  
+  // Make sure the hash is a positive number.
+  const positiveHash = Math.abs(hash);
+
+  // 2. Map the hash to the specified range [min, max].
+  const range = max - min + 1;
+  const result = (positiveHash % range) + min;
+
+  return result;
+}
+
+
 
 let dataDownloadRequiredES_1 = async (root) => {
     if (! checkDDR_ES1(root.event[0].dataDownloadRequired[0].$)){
@@ -262,15 +359,12 @@ let dataDownloadRequiredES_1 = async (root) => {
     
     //correct instance
     format_returncode(root.event,0,null)
-    let ProgNm = "1111111111_V01"
-    let MagType = "150"
+    
+    let ProgNm = MagProdRcp[chgOver_Subject][0]
+    let MagType = MagProdRcp[chgOver_Subject][1]
     //format body
-    await DDR_ES1_Body(ProgNm,MagType).then(Res => {
-        format_body(root.body,Res)
-
-    }).catch(error => {
-        console.error("Failed to parse:", error.message);
-    });
+    let Res = await DDR_ES1_Body(ProgNm,MagType);
+    format_body(root.body,Res)
     
 }
 let checkDDR_ES1 = (eventAttribute) => {return true;}
@@ -301,53 +395,59 @@ let dataDownloadRequiredES_15 = async (root) => {
         return;
     };
     
+    let Res = await DDR_ES15_Body();
     //correct instance
     format_returncode(root.event,0,null)
-
     //format body
-    await DDR_ES15_Body().then(Res => {
-        format_body(root.body,Res)
-
-    }).catch(error => {
-        console.error("Failed to parse:", error.message);
-    });
+    format_body(root.body,Res)   
+}
+let DDR_ES15_Body = async () => {
+    let DDR_ES15_BodyRes = `
+            <body>
+                <structArrays>
+                    <array name="TypeDataResponse">
+                        <structDef>
+                            <item name="orderNo" dataType="8" />
+                            <item name="priority" dataType="3" />
+                            <item name="typeNo" dataType="8" />
+                            <item name="typeVar" dataType="8" />
+                        </structDef>
+                        <values>
+                        </values>
+                    </array>
+                </structArrays>
+                <structs />
+            </body>
+`;
+   //To Link
+    let ES56Obj_item = DDR_ES56_Obj.body.structArrays[0].array[0].values[0];
+    //pointer
+    let DDR_ES15_Obj = await parseStringPromise(DDR_ES15_BodyRes);
     
+    DDR_ES15_Obj.body.structArrays[0].array[0].values[0] = {'item' : []}
+    let item_refer = DDR_ES15_Obj.body.structArrays[0].array[0].values[0];
+
+    ES56Obj_item.item.map(item => item_refer.item.push(
+        {"$":{
+            'orderNo': item.$.orderNo,
+            'typeNo' : simpleHash(item.$.typeNo),
+            'typeVar' : item.$.typeVar,
+            'priority' : item.$.priority
+        }
+        }
+    ))
+  return DDR_ES15_Obj;
 }
 let checkDDR_ES15 = (eventAttribute) => {return true;}
-let DDR_ES15_Body = async () => {
-    let template = `
-                <body>
-                    <structArrays>
-                        <array name="TypeDataResponse">
-                            <structDef>
-                                <item name="orderNo" dataType="8" />
-                                <item name="priority" dataType="3" />
-                                <item name="typeNo" dataType="8" />
-                                <item name="typeVar" dataType="8" />
-                            </structDef>
-                            <values>
-                                <item orderNo="OA1001" priority="1" typeNo="1111111111" typeVar="0001" />
-                                <item orderNo="OA1002" priority="2" typeNo="1111111111" typeVar="0001" />
-                                <item orderNo="OA1003" priority="3" typeNo="1111111111" typeVar="0001" />
-                                <item orderNo="OA1004" priority="4" typeNo="1111111111" typeVar="0001" />
-                                <item orderNo="OA1005" priority="5" typeNo="1111111111" typeVar="0001" />
-                            </values>
-                        </array>
-                    </structArrays>
-                    <structs />
-                </body>
-    `;
-    const xmlInput = template.toString().trim();
-
-    try {
-        const request = await parseStringPromise(xmlInput);
-        return request;
-    } catch (err) {
-        console.error("❌ Error parsing XML:", err.message);
-        // You can throw the error or return a specific value, depending on your error-handling strategy
-        throw err;
-    }
-};
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Ensure the hash is a 32-bit integer
+  }
+  return hash.toString().slice(0,str.length);
+}
 
 
 
@@ -361,53 +461,69 @@ let dataDownloadRequiredES_56 = async (root) => {
     format_returncode(root.event,0,null)
 
     //format body
-    await DDR_ES56_Body().then(Res => {
-        format_body(root.body,Res)
-
-    }).catch(error => {
+    let MaxItem = 5;
+    try{
+        let Res = await DDR_ES56_Body(MaxItem);
+        format_body(root.body,Res);
+    }catch (error){
         console.error("Failed to parse:", error.message);
-    });
-    
-}
-let checkDDR_ES56 = (eventAttribute) => {return true;}
-let DDR_ES56_Body = async () => {
-    let template = `
-                <body>
-                    <structArrays>
-                        <array name="orderList">
-                            <structDef>
-                                <item name="orderNo" dataType="8" />
-                                <item name="quantity" dataType="3" />
-                                <item name="typeNo" dataType="8" />
-                                <item name="typeVar" dataType="8" />
-                                <item name="priority" dataType="3" />
-                                <item name="workingCode" dataType="2" />
-                                <item name="orderState" dataType="3" />
-                                <item name="counter" dataType="3" />
-                                <item name="batch" dataType="8" />
-                            </structDef>
-                            <values>
-                                <item orderNo="OA1001" quantity="100" typeNo="1111111111" typeVar="0001" priority="1" workingCode="0" orderState="3" counter="4" batch="" />
-                                <item orderNo="OA1002" quantity="99" typeNo="1111111111" typeVar="0001" priority="2" workingCode="0" orderState="2" counter="0" batch="" />
-                                <item orderNo="OA1003" quantity="100" typeNo="1111111111" typeVar="0001" priority="3" workingCode="0" orderState="2" counter="0" batch="" />
-                                <item orderNo="OA1004" quantity="100" typeNo="1111111111" typeVar="0001" priority="4" workingCode="0" orderState="2" counter="0" batch="" />
-                                <item orderNo="OA1005" quantity="100" typeNo="1111111111" typeVar="0001" priority="5" workingCode="0" orderState="2" counter="0" batch="" />
-                            </values>
-                        </array>
-                    </structArrays>
-                    <structs />
-                </body>
-    `;
-    const xmlInput = template.toString().trim();
-
-    try {
-        const request = await parseStringPromise(xmlInput);
-        return request;
-    } catch (err) {
-        console.error("❌ Error parsing XML:", err.message);
-        // You can throw the error or return a specific value, depending on your error-handling strategy
-        throw err;
     }
+
+}
+
+let checkDDR_ES56 = (eventAttribute) => {return true;}
+
+let DDR_ES56_Body = async (maxItem) => {
+   
+    let item_refer = DDR_ES56_Obj.body.structArrays[0].array[0].values[0];
+    if(!item_refer.hasOwnProperty('item')){
+        DDR_ES56_Obj.body.structArrays[0].array[0].values[0] = {'item' : []}
+    }
+    //capture head
+    item_refer = DDR_ES56_Obj.body.structArrays[0].array[0].values[0];
+    if(!item_refer.item[0]){
+        DDR_ES56_Obj.body.structArrays[0].array[0].values[0].item.push({"$":{
+            'orderNo': "OA1001",
+            'quantity': "20",
+            'typeNo' : "1111111111",
+            'typeVar' : "0001",
+            'priority' : "1",
+            'workingCode' : "0",
+            'orderState' : "2",
+            'counter' : "20",
+            'batch' : "1",
+        }
+        })
+    }
+    //rearrange priority
+    item_refer.item.map((itm,idx) => itm.$.priority = idx+1);
+    // item_refer.item.map()
+    while(item_refer.item.length != 0 && item_refer.item.length <  maxItem){
+        let idx = item_refer.item.length-1;
+        item_refer.item.push({"$":{
+            'orderNo': getNextIdx(item_refer.item[idx].$.orderNo,9999),
+            'quantity':getNextIdx(item_refer.item[idx].$.quantity,50),
+            'typeNo' :getNextIdx(item_refer.item[idx].$.typeNo,9999999999),
+            'typeVar' :getNextIdx(item_refer.item[idx].$.typeVar,9999),
+            'priority' :getNextIdx(item_refer.item[idx].$.priority+1,5),
+            'workingCode' :getNextIdx(item_refer.item[idx].$.workingCode,10),
+            'orderState' : "2",
+            'counter' :getNextIdx(item_refer.item[idx].$.counter,50),
+            'batch' :getNextIdx(item_refer.item[idx].$.batch,3),
+        }})
+    }
+
+    return DDR_ES56_Obj;
+};
+function getNextIdx(value, maxIdx) {
+    if (typeof value !== "string") return value;
+    let match = value.match(/^([^\d]*)(\d+)$/);
+    if (!match) return value;
+
+    let prefix = match[1];
+    let num = parseInt(match[2], 10);
+    num = num < maxIdx ? num + 1 : 1;
+    return prefix + String(num).padStart(match[2].length, "0");
 };
 
 let dataUploadRequired_ES_10 = async (root) => {
@@ -432,6 +548,8 @@ let dataUploadRequired_ES_52 = async (root) => {
     };
     
     //correct instance
+    let [orderNo,changeState] = DUR_ES52_parseOrder(root.body[0].items[0].item)
+    DUR_ES52_updateES56Obj(DDR_ES56_Obj.body.structArrays[0].array[0].values[0].item,orderNo,changeState);
     format_returncode(root.event,0,null)
 
     //format body
@@ -439,7 +557,23 @@ let dataUploadRequired_ES_52 = async (root) => {
     
 }
 let checkDuR_ES52 = (eventAttribute) => {return true;}
+let DUR_ES52_parseOrder = (itemArr) => {
+    let OrderNoItm = itemArr.find(obj => obj.$.name === "orderNo");
+    let OrderStateItm = itemArr.find(obj => obj.$.name === "orderState");
 
+    return [OrderNoItm.$.value,OrderStateItm.$.value]
+}
+let DUR_ES52_updateES56Obj=  (ES56_Obj_Items,orderNo,changeState) => {
+   let index = ES56_Obj_Items.findIndex(obj => obj.$.orderNo === orderNo);
+   if (index != -1) { //searched
+     if(changeState == '4' || changeState == '10'){
+        ES56_Obj_Items.splice(index,1);
+     }
+     if(changeState == '3' ){
+        ES56_Obj_Items[index].$.orderState = 3;
+     }
+   }
+};
 
 //formatting are below
 let format_returncode = (evt,returncode,err_txt) => {

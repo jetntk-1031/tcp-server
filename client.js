@@ -1,4 +1,4 @@
-const net = require('net'); // Node.js's built-in networking module
+import net from "net";
 const client = new net.Socket(); // Create a new TCP client socket.
 
 const HOST = 'interchange.proxy.rlwy.net';
