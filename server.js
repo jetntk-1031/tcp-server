@@ -156,10 +156,10 @@ let CheckEvent = async (request) => {
         
     }
     else if (eventNm == "dataUploadRequired") {
-        if (eventswitch == "10"){
-            await dataUploadRequired_ES_10(request.root);
-        }
-        else if (eventswitch == "52"){
+        // if (eventswitch == "10"){
+        //     await dataUploadRequired_ES_10(request.root);
+        // }
+        if (eventswitch == "52"){
             await dataUploadRequired_ES_52(request.root);
         }
     }
