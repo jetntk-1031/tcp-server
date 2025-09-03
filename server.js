@@ -353,7 +353,7 @@ let plcChangeOverStarted = async (root) => {
     //correct instance
     format_returncode(root.event,0,null)
 
-    if(!root.hasOwnProperty("body")){
+    if(!root.hasOwnProperty("body") || root.body == null){
         root["body"] = [null];
     }
 
