@@ -288,16 +288,16 @@ let checkPR_ES10 = (root) => {
 
     let MagId = root.event[0].partReceived[0]?.$?.hasOwnProperty("identifier")
     if (!MagId){
-        format_returncode(root.event,-1,"No Mag Identifier received");
+        format_returncode(root.event,-1,"No Mag Identifier received In Part Receive");
         return false;
     }
     let MagPosIdx = root.body[0].items[0].item.find(item => item.$.name == "magazinePosition" )
     if (!MagPosIdx){
-        format_returncode(root.event,-1,"Mag Pos Not Given");
+        format_returncode(root.event,-1,"Mag Pos Not Given In Prat Receive");
         return false;
     }
     if ( MagPosIdx.$.value < 1 || MagPosIdx.$.value > 3 ){
-        format_returncode(root.event,-1,"No Invalid Mag Pos ");
+        format_returncode(root.event,-1," Invalid Mag Pos In Part Receive ");
         return false;
     }
 
@@ -355,16 +355,43 @@ let PP_ES1_updateES56Obj=  (ES56_Obj_Items,typeNo) => {
 
 
 let partProcessed_ES10 = async (root) => {
-    if (! checkPP_ES10(root.event[0].partProcessed[0].$)){
-        format_returncode(root.event,0,"Part Process Failed")
+    let magPos = checkPP_ES10(root)
+    if (! magPos ){
         return;
     };
     
     //correct instance
+    if (MagRecord[magPos].MagId == root.event[0].partProcessed[0].$.identifier){
+         delete MagRecord[magPos];
+    }
     format_returncode(root.event,0,null)
     format_body(root.body)
 }
-let checkPP_ES10 = (eventAttribute) => {return true;};
+let checkPP_ES10 = (root) => {
+    let MagId = root.event[0].partProcessed[0]?.$?.hasOwnProperty("identifier")
+    if (!MagId){
+        format_returncode(root.event,-1,"No Mag Identifier received In Part Process");
+        return false;
+    }
+    let MagPosIdx = root.body[0].items[0].item.find(item => item.$.name == "magazinePosition" )
+    if (!MagPosIdx){
+        format_returncode(root.event,-1,"Mag Pos Not Given In Part Process");
+        return false;
+    }
+    if ( MagPosIdx.$.value < 1 || MagPosIdx.$.value > 3 ){
+        format_returncode(root.event,-1,"Invalid Mag Pos In Part Process ");
+        return false;
+    }
+    if (! MagRecord[MagPosIdx.$.value]?.hasOwnProperty("MagId") ){
+        format_returncode(root.event,-1,"No Magazine Position Recorded in previous Part Received");
+        return false;
+    }
+    if (MagRecord[MagPosIdx.$.value].MagId != root.event[0].partProcessed[0].$.identifier){
+        format_returncode(root.event,-1,`Not Similar Recorded from Part Received stored in previous ${MagPosIdx.$.value} position`);
+        return false;
+    }
+    return MagPosIdx.$.value;
+};
 
 let partProcessed_ES11 = async (root) => {
     if (! checkPP_ES11(root.event[0].partProcessed[0].$)){
