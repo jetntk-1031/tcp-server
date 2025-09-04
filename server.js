@@ -257,10 +257,10 @@ let partReceived_ES10 = async (root) => {
 
         //if typeNo Not found in registered Magazine assign new
         let PanelType,PanelCount,MagazineId;
-        if (MagRecord.magPos?.MagId && MagRecord.magPos.MagId == root.event[0].partReceived[0].$.identifier ){
-            MagazineId = MagRecord.magPos.MagId;
-            PanelType = MagRecord.magPos.MagTypeNo; 
-            PanelCount = MagRecord.magPos.PanelCnt ;
+        if (MagRecord[magPos]?.MagId && MagRecord[magPos].MagId == root.event[0].partReceived[0].$.identifier ){
+            MagazineId = MagRecord[magPos].MagId;
+            PanelType = MagRecord[magPos].MagTypeNo; 
+            PanelCount = MagRecord[magPos].PanelCnt ;
         }
         else{
             MagazineId = root.event[0].partReceived[0].$.identifier,
@@ -269,7 +269,7 @@ let partReceived_ES10 = async (root) => {
         }
    
         //register Magazine
-        MagRecord.magPos = {
+        MagRecord[magPos] = {
             "MagId" : MagazineId,
             "PanelCnt" : PanelCount,
             "MagTypeNo" : PanelType
