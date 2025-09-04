@@ -310,10 +310,22 @@ let partProcessed_ES1 = async (root) => {
     };
     
     //correct instance
+    PP_ES1_updateES56Obj(DDR_ES56_Obj.body.structArrays[0].array[0].values[0].item,root.body[0].structs[0].resHead[0].$.typeNo)
     format_returncode(root.event,0,null)
     format_body(root.body)
 }
 let checkPP_ES1 = (eventAttribute) => {return true;};
+
+let PP_ES1_updateES56Obj=  (ES56_Obj_Items,typeNo) => {
+   let index = ES56_Obj_Items.findIndex(obj => obj.$.typeNo === typeNo);
+   if (index != -1) { //searched
+        let num = parseInt(ES56_Obj_Items[index].$.quantity, 10);
+        ES56_Obj_Items[index].$.quantity = String(num+1);
+     }
+};
+
+
+
 let partProcessed_ES10 = async (root) => {
     if (! checkPP_ES10(root.event[0].partProcessed[0].$)){
         format_returncode(root.event,0,"Part Process Failed")
@@ -514,13 +526,13 @@ let DDR_ES56_Body = async (maxItem) => {
     if(!item_refer.item[0]){
         DDR_ES56_Obj.body.structArrays[0].array[0].values[0].item.push({"$":{
             'orderNo': "OA1001",
-            'quantity': "20",
+            'quantity': "0",
             'typeNo' : "1111111111",
             'typeVar' : "0001",
             'priority' : "1",
             'workingCode' : "0",
             'orderState' : "2",
-            'counter' : "20",
+            'counter' : "70",
             'batch' : "1",
         }
         })
@@ -531,28 +543,28 @@ let DDR_ES56_Body = async (maxItem) => {
     while(item_refer.item.length != 0 && item_refer.item.length <  maxItem){
         let idx = item_refer.item.length-1;
         item_refer.item.push({"$":{
-            'orderNo': getNextIdx(item_refer.item[idx].$.orderNo,9999),
-            'quantity':getNextIdx(item_refer.item[idx].$.quantity,50),
-            'typeNo' :getNextIdx(item_refer.item[idx].$.typeNo,9999999999),
-            'typeVar' :getNextIdx(item_refer.item[idx].$.typeVar,9999),
-            'priority' :getNextIdx(item_refer.item[idx].$.priority+1,5),
-            'workingCode' :getNextIdx(item_refer.item[idx].$.workingCode,10),
+            'orderNo': getNextIdx(item_refer.item[idx].$.orderNo,1,9999,20),
+            'quantity':getNextIdx(item_refer.item[idx].$.quantity,0,0,0),
+            'typeNo' :getNextIdx(item_refer.item[idx].$.typeNo,0,9999999999,88),
+            'typeVar' :getNextIdx(item_refer.item[idx].$.typeVar,0,9999,77),
+            'priority' :getNextIdx(item_refer.item[idx].$.priority+1,0,5),
+            'workingCode' :getNextIdx(item_refer.item[idx].$.workingCode,0,10,2),
             'orderState' : "2",
-            'counter' :getNextIdx(item_refer.item[idx].$.counter,50),
-            'batch' :getNextIdx(item_refer.item[idx].$.batch,3),
+            'counter' :getNextIdx(item_refer.item[idx].$.counter,100,200,50),
+            'batch' :getNextIdx(item_refer.item[idx].$.batch,0,3,1),
         }})
     }
 
     return DDR_ES56_Obj;
 };
-function getNextIdx(value, maxIdx) {
+function getNextIdx(value, minIdx,maxIdx,increment = 1) {
     if (typeof value !== "string") return value;
     let match = value.match(/^([^\d]*)(\d+)$/);
     if (!match) return value;
 
     let prefix = match[1];
     let num = parseInt(match[2], 10);
-    num = num < maxIdx ? num + 1 : 1;
+    num = num < maxIdx ? num + increment : minIdx;
     return prefix + String(num).padStart(match[2].length, "0");
 };
 
