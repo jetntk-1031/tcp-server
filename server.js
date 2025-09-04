@@ -237,30 +237,7 @@ let PR_ES1_Body = async (event) => {
 
   return PR_ES1_Obj;
 }
-// let PR_ES1_Body = async (ProgNm, MagType) => {
-//     let template = `
-//                     <body>
-//                         <items>
-//                             <item name="LocationState" value="0" dataType="3" />
-//                             <item name="ProcessState" value="0" dataType="3" />
-//                             <item name="ToolState" value="0" dataType="3" />
-//                         </items>
-//                         <structs>
-//                             <workPart changeOver="false" partForStation="false" typeNo="1111111111" typeVar="0001" workingCode="0" identifier="MLL_Panel01" batch="12345" passThrough="false" nextProcessNo="25" partState="5" />
-//                         </structs>
-//                     </body>
-//                     `;
-//     const xmlInput = template.toString().trim();
 
-//     try {
-//         const request = await parseStringPromise(xmlInput);
-//         return request;
-//     } catch (err) {
-//         console.error("❌ Error parsing XML:", err.message);
-//         // You can throw the error or return a specific value, depending on your error-handling strategy
-//         throw err;
-//     }
-// };
 
 let partReceived_ES10 = async (root) => {
     if (! checkPR_ES10(root.event[0].partReceived[0].$)){
@@ -269,16 +246,18 @@ let partReceived_ES10 = async (root) => {
     };
     
     //correct instance
-    format_returncode(root.event,0,null)
-    
-    let PanelCount = 25;
-    let PanelType = "1111111111";
-    await PR_ES10_Body(PanelCount,PanelType).then(Res => {
-        format_body(root.body,Res)
+    format_returncode(root.event,0,null);
 
-    }).catch(error => {
+    try {
+        let  item_refer = DDR_ES56_Obj.body.structArrays[0].array[0].values[0].item;
+        let  PanelCount = 25;
+        let  PanelType = item_refer[0].$.typeNo;
+        let  Res = await PR_ES10_Body(PanelCount,PanelType);
+        format_body(root.body,Res);
+    } catch (error) {
         console.error("Failed to parse:", error.message);
-    });
+    }
+
 }
 let checkPR_ES10 = (eventAttribute) => {return true;};
 let PR_ES10_Body = async (PanelCount,PanelType) => {
@@ -302,6 +281,9 @@ let PR_ES10_Body = async (PanelCount,PanelType) => {
         throw err;
     }
 };
+//convert randomly pick and assign a number typeNo for that mag position
+//next time the mag same mag id with same 
+
 
 let partProcessed_ES1 = async (root) => {
     if (! checkPP_ES1(root.event[0].partProcessed[0].$)){
