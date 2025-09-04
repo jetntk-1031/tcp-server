@@ -42,6 +42,10 @@ const MagProdRcp = {
     0:["100","csp-240403-01_S2"],
     1:["175","csp-240403-01_S2"]
 }
+//0: {MagTypeNo: ,MagId, PanelCount,}
+let MagRecord = {
+
+}
 //    2:["200","Mag1"],
 function extractXml(data) {
   let xml;
@@ -240,26 +244,65 @@ let PR_ES1_Body = async (event) => {
 
 
 let partReceived_ES10 = async (root) => {
-    if (! checkPR_ES10(root.event[0].partReceived[0].$)){
-        format_returncode(root.event,0,"Part Process Failed")
+    let magPos = checkPR_ES10(root)
+    if (!magPos){
         return;
     };
-    
+  
     //correct instance
-    format_returncode(root.event,0,null);
+    
 
     try {
         let  item_refer = DDR_ES56_Obj.body.structArrays[0].array[0].values[0].item;
-        let  PanelCount = 25;
-        let  PanelType = item_refer[0].$.typeNo;
+
+        //if typeNo Not found in registered Magazine assign new
+        let PanelType,PanelCount,MagazineId;
+        if (MagRecord.magPos?.MagId && MagRecord.magPos.MagId == root.event[0].partReceived[0].$.identifier ){
+            MagazineId = agRecord.magPos.MagId;
+            PanelType = MagRecord.magPos.MagTypeNo; 
+            PanelCount = MagRecord.magPos.PanelCnt ;
+        }
+        else{
+            MagazineId = root.event[0].partReceived[0].$.identifier,
+            PanelType = item_refer[0].$.typeNo ;
+            PanelCount = getRandomRange(0,(item_refer[0].$.quantity - item_refer[0].$.counter) *0.8);
+        }
+   
+        //register Magazine
+        MagRecord.magPos = {
+            "MagId" : MagazineId,
+            "PanelCnt" : PanelCount,
+            "MagTypeNo" : PanelType
+        };
+
+
         let  Res = await PR_ES10_Body(PanelCount,PanelType);
+        format_returncode(root.event,0,null);
         format_body(root.body,Res);
     } catch (error) {
         console.error("Failed to parse:", error.message);
     }
 
 }
-let checkPR_ES10 = (eventAttribute) => {return true;};
+let checkPR_ES10 = (root) => {
+
+    let MagId = root.event[0].partReceived[0]?.$?.hasOwnProperty("identifier")
+    if (!MagId){
+        format_returncode(root.event,-1,"No Mag Identifier received");
+        return false;
+    }
+    let MagPosIdx = root.body[0].items[0].item.find(item => item.$.name == "magazinePosition" )
+    if (!MagPosIdx){
+        format_returncode(root.event,-1,"Mag Pos Not Given");
+        return false;
+    }
+    if ( MagPosIdx.$.value < 1 || MagPosIdx.$.value > 3 ){
+        format_returncode(root.event,-1,"No Invalid Mag Pos ");
+        return false;
+    }
+
+    return MagPosIdx.$.value;
+};
 let PR_ES10_Body = async (PanelCount,PanelType) => {
     let template = `
                     <body>
@@ -281,9 +324,12 @@ let PR_ES10_Body = async (PanelCount,PanelType) => {
         throw err;
     }
 };
-//convert randomly pick and assign a number typeNo for that mag position
-//next time the mag same mag id with same 
+let getRandomRange = (min,max) => {
+    return Math.floor(Math.random() * (max - min + 1)) + min ;
+}
 
+
+//End of PR_ES1
 
 let partProcessed_ES1 = async (root) => {
     if (! checkPP_ES1(root.event[0].partProcessed[0].$)){
@@ -301,8 +347,8 @@ let checkPP_ES1 = (eventAttribute) => {return true;};
 let PP_ES1_updateES56Obj=  (ES56_Obj_Items,typeNo) => {
    let index = ES56_Obj_Items.findIndex(obj => obj.$.typeNo === typeNo);
    if (index != -1) { //searched
-        let num = parseInt(ES56_Obj_Items[index].$.quantity, 10);
-        ES56_Obj_Items[index].$.quantity = String(num+1);
+        let num = parseInt(ES56_Obj_Items[index].$.counter, 10);
+        ES56_Obj_Items[index].$.counter = String(num+1);
      }
 };
 
@@ -470,7 +516,7 @@ function simpleHash(str) {
     hash = (hash << 5) - hash + char;
     hash |= 0; // Ensure the hash is a 32-bit integer
   }
-  return hash.toString().slice(0,str.length);
+  return "SMT" + hash.toString().slice(0,str.length-3);
 }
 
 
@@ -508,13 +554,13 @@ let DDR_ES56_Body = async (maxItem) => {
     if(!item_refer.item[0]){
         DDR_ES56_Obj.body.structArrays[0].array[0].values[0].item.push({"$":{
             'orderNo': "OA1001",
-            'quantity': "0",
-            'typeNo' : "1111111111",
+            'quantity': "70",
+            'typeNo' : "FA11111111",
             'typeVar' : "0001",
             'priority' : "1",
             'workingCode' : "0",
             'orderState' : "2",
-            'counter' : "70",
+            'counter' : "0",
             'batch' : "1",
         }
         })
@@ -526,13 +572,13 @@ let DDR_ES56_Body = async (maxItem) => {
         let idx = item_refer.item.length-1;
         item_refer.item.push({"$":{
             'orderNo': getNextIdx(item_refer.item[idx].$.orderNo,1,9999,20),
-            'quantity':getNextIdx(item_refer.item[idx].$.quantity,0,0,0),
+            'quantity':getNextIdx(item_refer.item[idx].$.quantity,100,200,50),
             'typeNo' :getNextIdx(item_refer.item[idx].$.typeNo,0,9999999999,88),
             'typeVar' :getNextIdx(item_refer.item[idx].$.typeVar,0,9999,77),
             'priority' :getNextIdx(item_refer.item[idx].$.priority+1,0,5),
             'workingCode' :getNextIdx(item_refer.item[idx].$.workingCode,0,10,2),
             'orderState' : "2",
-            'counter' :getNextIdx(item_refer.item[idx].$.counter,100,200,50),
+            'counter' :getNextIdx(item_refer.item[idx].$.counter,0,0,0),
             'batch' :getNextIdx(item_refer.item[idx].$.batch,0,3,1),
         }})
     }
