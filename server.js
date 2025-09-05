@@ -221,7 +221,7 @@ let PR_ES1_Body = async (event) => {
     PR_ES1_Obj.body.structs[0] = {'workPart' : []}
    
     //find relevant part
-    let WO_item = ES56Obj_item.item.find(item => item.$.typeNo == event.partReceived[0].$.typeNo);
+    let WO_item = ES56Obj_item.item.find(item => (item.$.typeNo == event.partReceived[0].$.typeNo || simpleHash(item.$.typeNo) == event.partReceived[0].$.typeNo ));
 
     PR_ES1_Obj.body.structs[0].workPart[0] = {
         "$":{
