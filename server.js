@@ -187,7 +187,7 @@ let CheckEvent = async (request) => {
 
 let partReceived_ES1 = async (root) => {
     if (! checkPR_ES1(root.event[0].partReceived[0].$)){
-        format_returncode(root.event,0,"Part Process Failed")
+        format_returncode(root,0,"Part Process Failed")
         return;
     };
     
@@ -195,7 +195,7 @@ let partReceived_ES1 = async (root) => {
     
     let Res = await PR_ES1_Body(root.event[0]);
 
-    format_returncode(root.event,0,null)
+    format_returncode(root,0,null)
     format_body(root.body,Res);
     
 }
@@ -277,7 +277,7 @@ let partReceived_ES10 = async (root) => {
 
 
         let  Res = await PR_ES10_Body(PanelCount,PanelType);
-        format_returncode(root.event,0,null);
+        format_returncode(root,0,null);
         format_body(root.body,Res);
     } catch (error) {
         console.error("Failed to parse:", error.message);
@@ -288,16 +288,16 @@ let checkPR_ES10 = (root) => {
 
     let MagId = root.event[0].partReceived[0]?.$?.hasOwnProperty("identifier")
     if (!MagId){
-        format_returncode(root.event,-1,"No Mag Identifier received In Part Receive");
+        format_returncode(root,-1,"No Mag Identifier received In Part Receive");
         return false;
     }
     let MagPosIdx = root.body[0].items[0].item.find(item => item.$.name == "magazinePosition" )
     if (!MagPosIdx){
-        format_returncode(root.event,-1,"Mag Pos Not Given In Prat Receive");
+        format_returncode(root,-1,"Mag Pos Not Given In Prat Receive");
         return false;
     }
     if ( MagPosIdx.$.value < 1 || MagPosIdx.$.value > 3 ){
-        format_returncode(root.event,-1," Invalid Mag Pos In Part Receive ");
+        format_returncode(root,-1," Invalid Mag Pos In Part Receive ");
         return false;
     }
 
@@ -333,13 +333,13 @@ let getRandomRange = (min,max) => {
 
 let partProcessed_ES1 = async (root) => {
     if (! checkPP_ES1(root.event[0].partProcessed[0].$)){
-        format_returncode(root.event,0,"Part Process Failed")
+        format_returncode(root,0,"Part Process Failed")
         return;
     };
     
     //correct instance
     PP_ES1_updateES56Obj(DDR_ES56_Obj.body.structArrays[0].array[0].values[0].item,root.body[0].structs[0].resHead[0].$.typeNo)
-    format_returncode(root.event,0,null)
+    format_returncode(root,0,null)
     format_body(root.body)
 }
 let checkPP_ES1 = (eventAttribute) => {return true;};
@@ -364,30 +364,30 @@ let partProcessed_ES10 = async (root) => {
     if (MagRecord[magPos].MagId == root.event[0].partProcessed[0].$.identifier){
          delete MagRecord[magPos];
     }
-    format_returncode(root.event,0,null)
+    format_returncode(root,0,null)
     format_body(root.body)
 }
 let checkPP_ES10 = (root) => {
     let MagId = root.event[0].partProcessed[0]?.$?.hasOwnProperty("identifier")
     if (!MagId){
-        format_returncode(root.event,-1,"No Mag Identifier received In Part Process");
+        format_returncode(root,-1,"No Mag Identifier received In Part Process");
         return false;
     }
     let MagPosIdx = root.body[0].items[0].item.find(item => item.$.name == "magazinePosition" )
     if (!MagPosIdx){
-        format_returncode(root.event,-1,"Mag Pos Not Given In Part Process");
+        format_returncode(root,-1,"Mag Pos Not Given In Part Process");
         return false;
     }
     if ( MagPosIdx.$.value < 1 || MagPosIdx.$.value > 3 ){
-        format_returncode(root.event,-1,"Invalid Mag Pos In Part Process ");
+        format_returncode(root,-1,"Invalid Mag Pos In Part Process ");
         return false;
     }
     if (! MagRecord[MagPosIdx.$.value]?.hasOwnProperty("MagId") ){
-        format_returncode(root.event,-1,"No Magazine Position Recorded in previous Part Received");
+        format_returncode(root,-1,"No Magazine Position Recorded in previous Part Received");
         return false;
     }
     if (MagRecord[MagPosIdx.$.value].MagId != root.event[0].partProcessed[0].$.identifier){
-        format_returncode(root.event,-1,`Not Similar Recorded from Part Received stored in previous ${MagPosIdx.$.value} position`);
+        format_returncode(root,-1,`Not Similar Recorded from Part Received stored in previous ${MagPosIdx.$.value} position`);
         return false;
     }
     return MagPosIdx.$.value;
@@ -395,12 +395,12 @@ let checkPP_ES10 = (root) => {
 
 let partProcessed_ES11 = async (root) => {
     if (! checkPP_ES11(root.event[0].partProcessed[0].$)){
-        format_returncode(root.event,0,"Part Process Failed")
+        format_returncode(root,0,"Part Process Failed")
         return;
     };
     
     //correct instance
-    format_returncode(root.event,0,null)
+    format_returncode(root,0,null)
     format_body(root.body)
 }
 let checkPP_ES11 = (eventAttribute) => {return true;};
@@ -410,14 +410,14 @@ let checkPP_ES11 = (eventAttribute) => {return true;};
 
 let plcChangeOverStarted = async (root) => {
     if (! checkTTNR(root.event[0].plcChangeOverStarted[0].$)){
-        format_returncode(root.event,0,"Change Over Started Failed")
+        format_returncode(root,0,"Change Over Started Failed")
         return;
     };
     //parsed the changeover typeNo 1st 
     chgOver_Subject = stringToRangedNumber(root.event[0].plcChangeOverStarted[0].$.typeNo,0,Object.keys(MagProdRcp).length-1);
 
     //correct instance
-    format_returncode(root.event,0,null)
+    format_returncode(root,0,null)
 
     if(!root.hasOwnProperty("body") || root.body == null){
         root["body"] = [null];
@@ -450,12 +450,12 @@ function stringToRangedNumber(str, min, max) {
 
 let dataDownloadRequiredES_1 = async (root) => {
     if (! checkDDR_ES1(root.event[0].dataDownloadRequired[0].$)){
-        format_returncode(root.event,0,"Data Download Required Failed")
+        format_returncode(root,0,"Data Download Required Failed")
         return;
     };
     
     //correct instance
-    format_returncode(root.event,0,null)
+    format_returncode(root,0,null)
     
     let ProgNm = MagProdRcp[chgOver_Subject][0]
     let MagType = MagProdRcp[chgOver_Subject][1]
@@ -488,13 +488,13 @@ let DDR_ES1_Body = async (ProgNm, MagType) => {
 
 let dataDownloadRequiredES_15 = async (root) => {
     if (! checkDDR_ES15(root.event[0].dataDownloadRequired[0].$)){
-        format_returncode(root.event,0,"Data Download Required ES_15 Failed")
+        format_returncode(root,0,"Data Download Required ES_15 Failed")
         return;
     };
     
     let Res = await DDR_ES15_Body();
     //correct instance
-    format_returncode(root.event,0,null)
+    format_returncode(root,0,null)
     //format body
     format_body(root.body,Res)   
 }
@@ -550,12 +550,12 @@ function simpleHash(str) {
 
 let dataDownloadRequiredES_56 = async (root) => {
     if (! checkDDR_ES56(root.event[0].dataDownloadRequired[0].$)){
-        format_returncode(root.event,0,"Data Download Required ES_56 Failed")
+        format_returncode(root,0,"Data Download Required ES_56 Failed")
         return;
     };
     
     //correct instance
-    format_returncode(root.event,0,null)
+    format_returncode(root,0,null)
 
     //format body
     let MaxItem = 5;
@@ -625,12 +625,12 @@ function getNextIdx(value, minIdx,maxIdx,increment = 1) {
 
 let dataUploadRequired_ES_10 = async (root) => {
     if (! checkDuR_ES10(root.event[0].dataUploadRequired[0].$)){
-        format_returncode(root.event,0,"Data Upload Required ES_10 Failed")
+        format_returncode(root,0,"Data Upload Required ES_10 Failed")
         return;
     };
     
     //correct instance
-    format_returncode(root.event,0,null)
+    format_returncode(root,0,null)
 
     //format body
     format_body(root.body)
@@ -639,21 +639,37 @@ let dataUploadRequired_ES_10 = async (root) => {
 let checkDuR_ES10 = (eventAttribute) => {return true;}
 
 let dataUploadRequired_ES_52 = async (root) => {
-    if (! checkDuR_ES52(root.event[0].dataUploadRequired[0].$)){
-        format_returncode(root.event,0,"Data Upload Required ES_52 Failed")
+    if (! checkDuR_ES52(root)){
         return;
     };
     
     //correct instance
     let [orderNo,changeState] = DUR_ES52_parseOrder(root.body[0].items[0].item)
     DUR_ES52_updateES56Obj(DDR_ES56_Obj.body.structArrays[0].array[0].values[0].item,orderNo,changeState);
-    format_returncode(root.event,0,null)
+    format_returncode(root,0,null)
 
     //format body
     format_body(root.body)
     
 }
-let checkDuR_ES52 = (eventAttribute) => {return true;}
+let checkDuR_ES52 = (root) => {
+    let checkOrderNo =  root.body[0].items[0].item?.find(item => item.$.name == "orderNo" );
+    if (! checkOrderNo){
+        format_returncode(root,-1,"No OrderNo found");
+        return false;
+    }
+    let checkOrderState = root.body[0].items[0].item?.find(item => item.$.name == "orderState" );
+    if (! checkOrderState){
+        format_returncode(root,-1,"No orderState found");
+        return false;
+    }
+    let checkExistInList = DDR_ES56_Obj.body.structArrays[0].array[0].values[0].item.some(item => item.$.orderNo == checkOrderNo.$.value)
+    if (!checkExistInList){
+        format_returncode(root,-1,"OrderNo No Existed in List");
+        return false;
+    }
+    return true;
+}
 let DUR_ES52_parseOrder = (itemArr) => {
     let OrderNoItm = itemArr.find(obj => obj.$.name === "orderNo");
     let OrderStateItm = itemArr.find(obj => obj.$.name === "orderState");
@@ -673,8 +689,10 @@ let DUR_ES52_updateES56Obj=  (ES56_Obj_Items,orderNo,changeState) => {
 };
 
 //formatting are below
-let format_returncode = (evt,returncode,err_txt) => {
-         evt[0] = {
+let format_returncode = (root,returncode,err_txt) => {
+        
+        if (returncode !== 0) root.body[0] = null;
+        root.event[0] = {
             "result" : [{
                 "$" : {
                     "returnCode" : `${returncode}`,
