@@ -80,19 +80,20 @@ const server = net.createServer((socket) => {
   console.log(`Client connected: ${socket.remoteAddress}:${socket.remotePort}`);
 
   socket.on("data", async (data) => {
-    // console.log(`data : ${data}`)
+    console.log(`RCV_FROM_MACHINE : ${data} \n`);
     const xmlInput = extractXml(data).toString().trim();
     try {
         const request = await parseStringPromise(xmlInput);
         await CheckEvent(request);
         
         let formatted_xml = builder.buildObject(request)
-        console.log(formatted_xml);
+        console.log(`SND_TO_MACHINE : ${formatted_xml} \n`);
         socket.write(formatted_xml);
  
     } catch (error) {
         let err_txt = `Error : ${error}`
-        console.log(err_txt)
+        console.log(`ERROR_TO_MACHINE : ${err_txt} \n`);
+        // console.log(err_txt)
         socket.write(err_txt);
     };
 
