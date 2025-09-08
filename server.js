@@ -600,7 +600,7 @@ let DDR_ES56_Body = async (maxItem) => {
         let idx = item_refer.item.length-1;
         item_refer.item.push({"$":{
             'orderNo': getNextIdx(item_refer.item[idx].$.orderNo,1,9999,20),
-            'quantity':getNextIdx(item_refer.item[idx].$.quantity,10,24,2),
+            'quantity':getNextIdx(item_refer.item[idx].$.quantity,10,18,2),
             'typeNo' :getNextIdx(item_refer.item[idx].$.typeNo,0,9999999999,88),
             'typeVar' :getNextIdx(item_refer.item[idx].$.typeVar,0,9999,77),
             'priority' :getNextIdx(item_refer.item[idx].$.priority+1,0,5),
