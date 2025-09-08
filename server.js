@@ -188,7 +188,7 @@ let CheckEvent = async (request) => {
 
 let partReceived_ES1 = async (root) => {
     if (! checkPR_ES1(root.event[0].partReceived[0].$)){
-        format_returncode(root,0,"Part Process Failed")
+        format_returncode(root,0,"Part Receive Failed")
         return;
     };
     
@@ -582,7 +582,7 @@ let DDR_ES56_Body = async (maxItem) => {
     if(!item_refer.item[0]){
         DDR_ES56_Obj.body.structArrays[0].array[0].values[0].item.push({"$":{
             'orderNo': "OA1001",
-            'quantity': "70",
+            'quantity': "10",
             'typeNo' : "FA11111111",
             'typeVar' : "0001",
             'priority' : "1",
@@ -600,7 +600,7 @@ let DDR_ES56_Body = async (maxItem) => {
         let idx = item_refer.item.length-1;
         item_refer.item.push({"$":{
             'orderNo': getNextIdx(item_refer.item[idx].$.orderNo,1,9999,20),
-            'quantity':getNextIdx(item_refer.item[idx].$.quantity,100,200,50),
+            'quantity':getNextIdx(item_refer.item[idx].$.quantity,10,24,2),
             'typeNo' :getNextIdx(item_refer.item[idx].$.typeNo,0,9999999999,88),
             'typeVar' :getNextIdx(item_refer.item[idx].$.typeVar,0,9999,77),
             'priority' :getNextIdx(item_refer.item[idx].$.priority+1,0,5),
