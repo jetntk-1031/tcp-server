@@ -264,9 +264,12 @@ let partReceived_ES10 = async (root) => {
             PanelCount = MagRecord[magPos].PanelCnt ;
         }
         else{
-            MagazineId = root.event[0].partReceived[0].$.identifier,
-            PanelType = item_refer[0].$.typeNo ;
-            PanelCount = getRandomRange(0,(item_refer[0].$.quantity - item_refer[0].$.counter) *0.8);
+            MagazineId = root.event[0].partReceived[0].$.identifier;
+            
+            let randomIdx = chooseOrderIdxByPriority(MagRecord.length,item_refer.length);
+
+            PanelType = item_refer[randomIdx].$.typeNo ;
+            PanelCount = getRandomRange(0,(item_refer[randomIdx].$.quantity - item_refer[randomIdx].$.counter) *0.8);
         }
    
         //register Magazine
@@ -329,6 +332,17 @@ let getRandomRange = (min,max) => {
     return Math.floor(Math.random() * (max - min + 1)) + min ;
 }
 
+let chooseOrderIdxByPriority = (MagObjLen,WOLen,Prob_MagLenLargerOne) => { 
+    // Prob_MagLenLargerOne : probability set to always give other WO for the second Magazine
+    if(MagObjLen == 1) return 1;
+   
+    if(WOLen == 1) return 1;
+  
+    if(Math.random() < Prob_MagLenLargerOne ) {
+        return getRandomRange(2,WOLen)
+    }
+    
+} 
 
 //End of PR_ES1
 
@@ -600,7 +614,7 @@ let DDR_ES56_Body = async (maxItem) => {
         let idx = item_refer.item.length-1;
         item_refer.item.push({"$":{
             'orderNo': getNextIdx(item_refer.item[idx].$.orderNo,1,9999,20),
-            'quantity':getNextIdx(item_refer.item[idx].$.quantity,10,18,2),
+            'quantity':getNextIdx(item_refer.item[idx].$.quantity,18,30,4),
             'typeNo' :getNextIdx(item_refer.item[idx].$.typeNo,0,9999999999,88),
             'typeVar' :getNextIdx(item_refer.item[idx].$.typeVar,0,9999,77),
             'priority' :getNextIdx(item_refer.item[idx].$.priority+1,0,5),
