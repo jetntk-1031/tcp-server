@@ -268,8 +268,8 @@ let partReceived_ES10 = async (root) => {
             
             let randomIdx = chooseOrderIdxByPriority(MagRecord.length,item_refer.length);
 
-            PanelType = item_refer[randomIdx].$.typeNo ;
-            PanelCount = getRandomRange(0,(item_refer[randomIdx].$.quantity - item_refer[randomIdx].$.counter) *0.8);
+            PanelType = item_refer[randomIdx-1].$.typeNo ;
+            PanelCount = getRandomRange(0,(item_refer[randomIdx].$.quantity - item_refer[randomIdx-1].$.counter) *0.8);
         }
    
         //register Magazine
