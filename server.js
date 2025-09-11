@@ -335,7 +335,7 @@ let getRandomRange = (min,max) => {
 let chooseOrderIdxByPriority = (MagObjLen,WOLen,Prob_MagLenLargerOne) => { 
     // Prob_MagLenLargerOne : probability set to always give other WO for the second Magazine
     console.log("the Error Here:",MagObjLen);
-    if(MagObjLen < 1) return 1;
+    if(MagObjLen <= 1) return 1;
 
     if(WOLen == 1) return 1;
   
