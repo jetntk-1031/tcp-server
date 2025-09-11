@@ -266,7 +266,7 @@ let partReceived_ES10 = async (root) => {
         else{
             MagazineId = root.event[0].partReceived[0].$.identifier;
             
-            let randomIdx = chooseOrderIdxByPriority(MagRecord.length,item_refer.length,1);
+            let randomIdx = chooseOrderIdxByPriority(Object.keys(MagRecord).length,item_refer.length,1);
 
             PanelType = item_refer[randomIdx-1].$.typeNo ;
             PanelCount = getRandomRange(0,(item_refer[randomIdx-1].$.quantity - item_refer[randomIdx-1].$.counter) *0.8);
